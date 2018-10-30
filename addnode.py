@@ -63,7 +63,7 @@ try:
             keypair = str(fh[6].split("\t")[1])[:-1]
             sshkey = str(fh[5].split("\t")[2])[:-1]
             availabilityzone = str(fh[7].split("\t")[2])[:-1]
-            defaultsecuritygroupid = str(fh[8].split("\t")[1])[:-1]
+            defaultsecuritygroupid = str(fh[9].split("\t")[1])[:-1]
 
             additional_node = (additional_node_template.render(
                 clustername=clustername,
