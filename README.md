@@ -1,6 +1,6 @@
-## what is bo
+## What is bo
 
-bo is a python script to automate the creation of a basic infrastructure on OpenStack.
+`bo` is a python script to automate the creation of a basic infrastructure on OpenStack.
 
 This includes: 
 * network
@@ -48,10 +48,27 @@ optional arguments:
                         c2f4f584c326)
 ```
 
-### Example
+### Example infrastructure bootstrap
 ```
 ./bo.py PB_ITE_1 xxx.xxx.xxx.xxx --workers 10
 terraform init
 terraform apply
 ```
 
+### Extending the cluster
+If you would like to extend the initial cluster you can easily add nodes by using the `addnode.py` script. Currently you will need to provide a free available IP in the subnet range you provided earlier; or in the 192.168.3.0/24 range by default.
+```
+./addnode 192.168.3.13
+terraform apply
+```
+
+### SecurityGroup defaults
+The script will create a new security group which is applied to all the nodes with the following rules. 
+* allow any to any on all protocols within the LAN
+* allow TCP 22 from outside
+* allow TCP 80 from outside 
+* allow TCP 443 from outside
+* allow TCP 8081 from outside
+
+
+The outside rules will only make sense if there is a floating IP attached to the node.
