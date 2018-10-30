@@ -1,0 +1,183 @@
+provider "openstack" {
+  user_name   = "{{ username }}"
+  tenant_name = "{{ projectname }}"
+  auth_url    = "https://identity.openstack.cloudvps.com:443/v3"
+}
+
+
+resource "openstack_networking_network_v2" "network_{{ clustername }}" {
+  name           = "network_{{ clustername }}"
+  admin_state_up = "true"
+}
+
+resource "openstack_networking_subnet_v2" "subnet_{{ clustername }}" {
+  name       = "subnet_{{ clustername }}"
+  network_id = "${openstack_networking_network_v2.network_{{ clustername }}.id}"
+  cidr       = "{{ subnetcidr }}"
+  ip_version = 4
+}
+
+resource "openstack_networking_router_v2" "bo_{{ clustername }}_router" {
+  name             = "bo_{{ clustername }}_router"
+  external_network_id = "{{ externalnetid }}"
+}
+
+resource "openstack_networking_router_interface_v2" "bo_{{ clustername }}_router_interface" {
+  router_id = "${openstack_networking_router_v2.bo_{{ clustername }}_router.id}"
+  subnet_id = "${openstack_networking_subnet_v2.subnet_{{ clustername }}.id}"
+}
+
+resource "openstack_compute_servergroup_v2" "{{ clustername }}-sg" {
+  name     = "{{ clustername }}-sg"
+  policies = ["anti-affinity"]
+}
+
+resource "openstack_networking_secgroup_v2" "secgroup_{{ clustername }}-1" {
+  name        = "secgroup_{{ clustername }}-1"
+  description = "boe Security group"
+}
+
+resource "openstack_networking_secgroup_rule_v2" "secgroup_{{ clustername }}-1-1" {
+  direction         = "ingress"
+  ethertype         = "IPv4"
+  protocol          = "4"
+  port_range_min    = 1
+  port_range_max    = 65535
+  remote_ip_prefix  = "{{ subnetcidr }}"
+  security_group_id = "${openstack_networking_secgroup_v2.secgroup_{{ clustername }}-1.id}"
+  depends_on = ["openstack_networking_secgroup_v2.secgroup_{{ clustername }}-1"]
+}
+
+resource "openstack_networking_secgroup_rule_v2" "secgroup_{{ clustername }}-2-1" {
+  direction         = "ingress"
+  ethertype         = "IPv4"
+  protocol          = "tcp"
+  port_range_min    =  80
+  port_range_max    =  80
+  remote_ip_prefix  = "0.0.0.0/0"
+  security_group_id = "${openstack_networking_secgroup_v2.secgroup_{{ clustername }}-1.id}"
+  depends_on = [
+       "openstack_networking_secgroup_rule_v2.secgroup_{{ clustername }}-1-1"
+     ]
+
+}
+
+resource "openstack_networking_secgroup_rule_v2" "secgroup_{{ clustername }}-2-2" {
+  direction         = "ingress"
+  ethertype         = "IPv4"
+  protocol          = "tcp"
+  port_range_min    =  443
+  port_range_max    =  443
+  remote_ip_prefix  = "0.0.0.0/0"
+  security_group_id = "${openstack_networking_secgroup_v2.secgroup_{{ clustername }}-1.id}"
+  depends_on = [
+       "openstack_networking_secgroup_rule_v2.secgroup_{{ clustername }}-2-1"
+     ]
+}
+
+resource "openstack_networking_secgroup_rule_v2" "secgroup_{{ clustername }}-2-3" {
+  direction         = "ingress"
+  ethertype         = "IPv4"
+  protocol          = "tcp"
+  port_range_min    =  8081
+  port_range_max    =  8081
+  remote_ip_prefix  = "0.0.0.0/0"
+  security_group_id = "${openstack_networking_secgroup_v2.secgroup_{{ clustername }}-1.id}"
+  depends_on = [
+       "openstack_networking_secgroup_rule_v2.secgroup_{{ clustername }}-2-2"
+     ]
+}
+
+resource "openstack_networking_secgroup_rule_v2" "secgroup_{{ clustername }}-2-4" {
+  direction         = "ingress"
+  ethertype         = "IPv4"
+  protocol          = "tcp"
+  port_range_min    =  22
+  port_range_max    =  22
+  remote_ip_prefix  = "0.0.0.0/0"
+  security_group_id = "${openstack_networking_secgroup_v2.secgroup_{{ clustername }}-1.id}"
+  depends_on = [
+       "openstack_networking_secgroup_rule_v2.secgroup_{{ clustername }}-2-3"
+     ]
+}
+
+
+resource "openstack_networking_secgroup_rule_v2" "secgroup_{{ clustername }}-3-1" {
+  direction         = "ingress"
+  ethertype         = "IPv4"
+  protocol          = "tcp"
+  port_range_min    =  1
+  port_range_max    =  65535
+  remote_ip_prefix  = "{{ subnetcidr }}"
+  security_group_id = "${openstack_networking_secgroup_v2.secgroup_{{ clustername }}-1.id}"
+  depends_on = [
+       "openstack_networking_secgroup_rule_v2.secgroup_{{ clustername }}-2-4"
+     ]
+}
+
+resource "openstack_networking_secgroup_rule_v2" "secgroup_{{ clustername }}-3-2" {
+  direction         = "ingress"
+  ethertype         = "IPv4"
+  protocol          = "udp"
+  port_range_min    =  1
+  port_range_max    =  65535
+  remote_ip_prefix  = "{{ subnetcidr }}"
+  security_group_id = "${openstack_networking_secgroup_v2.secgroup_{{ clustername }}-1.id}"
+  depends_on = [
+       "openstack_networking_secgroup_rule_v2.secgroup_{{ clustername }}-3-1"
+     ]
+}
+
+resource "openstack_networking_secgroup_rule_v2" "secgroup_{{ clustername }}-3-3" {
+  direction         = "ingress"
+  ethertype         = "IPv4"
+  protocol          = "icmp"
+  remote_ip_prefix  = "{{ subnetcidr }}"
+  security_group_id = "${openstack_networking_secgroup_v2.secgroup_{{ clustername }}-1.id}"
+  depends_on = [
+       "openstack_networking_secgroup_rule_v2.secgroup_{{ clustername }}-3-2"
+     ]
+}
+
+
+{% set counter = 10 %}
+{% for _ in range(counter, (counter+workers)) %}
+
+resource "openstack_networking_port_v2" "bo_{{ clustername }}_port_{{ counter + loop.index - 1 }}" {
+  name               = "bo_{{ clustername }}_port_{{ counter + loop.index - 1 }}"
+  network_id         = "${openstack_networking_network_v2.network_{{ clustername }}.id}"
+  admin_state_up     = "true"
+  security_group_ids = ["${openstack_networking_secgroup_v2.secgroup_{{ clustername }}-1.id}", "{{ defaultsecuritygroupid }}"]
+
+  fixed_ip {
+    "subnet_id"  = "${openstack_networking_subnet_v2.subnet_{{ clustername }}.id}"
+    "ip_address" = "{{ subnetcidr.rsplit('.', 1)[0] }}.{{ counter + loop.index - 1 }}"
+  }
+}
+
+
+resource "openstack_compute_instance_v2" "bo-{{ clustername }}-node{{ counter + loop.index -1 }}" {
+  name      = "bo-{{ clustername }}-node{{ counter + loop.index - 1 }}"
+  availability_zone = "{{ availabilityzone }}"
+  image_name  = "{{ glanceimagename }}"
+  flavor_id = "{{ workerimageflavor }}"
+  key_pair  = "{{ keypair }}"
+  security_groups = ["${openstack_networking_secgroup_v2.secgroup_{{ clustername }}-1.name}", "default" ]
+
+  scheduler_hints {
+    group = "${openstack_compute_servergroup_v2.{{ clustername }}-sg.id}"
+  } 
+
+  network {
+    name = "${openstack_networking_network_v2.network_{{ clustername }}.name}"
+    port = "${openstack_networking_port_v2.bo_{{ clustername }}_port_{{ counter + loop.index - 1}}.id}"
+  }
+}
+
+{% endfor %}
+
+resource "openstack_compute_floatingip_associate_v2" "fip_{{ clustername }}_f1" {
+  instance_id = "${openstack_compute_instance_v2.bo-{{ clustername }}-node10.id}"
+  floating_ip = "{{ floatingip }}"
+}
+
