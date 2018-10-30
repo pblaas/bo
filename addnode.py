@@ -1,5 +1,5 @@
 #!/usr/bin/env python2.7
-"""Kubernetes cluster generator - addnode."""
+"""Bootstrap OpenStack Environments - addnode """
 
 import argparse
 import os

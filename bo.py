@@ -38,6 +38,7 @@ if "OS_REGION_NAME" not in os.environ:
 if "OS_AUTH_URL" not in os.environ:
     os.environ["OS_AUTH_URL"] = "Default"
 
+
 def ValidateDNS(v):
     import re  # Unless you've already imported re previously
     try:
@@ -79,7 +80,6 @@ try:
         global rsakey
         rsakey = subprocess.check_output(["openstack", "keypair", "show", "--public-key", args.keypair]).strip()
         return rsakey
-
 
     def returnDefaultSecurityGroupId():
         """Retrieve default security group id from OpenStack."""
