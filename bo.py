@@ -100,7 +100,6 @@ try:
         print("defaultsecgrp:\t" + str(defaultsecuritygroupid))
         print("-" * 40 + "\n")
         print("To start building the cluster: \tterraform init && terraform plan && terraform apply")
-        print("To interact with the cluster: \tsh kubeconfig.sh")
 
     returnPublicKey()
     returnDefaultSecurityGroupId()
