@@ -1,0 +1,31 @@
+
+resource "openstack_networking_port_v2" "bo_{{ clustername }}_port_{{ octet }}" {
+  name               = "bo_{{ clustername }}_port_{{ octet }}"
+  network_id         = "${openstack_networking_network_v2.network_{{ clustername }}.id}"
+  admin_state_up     = "true"
+  security_group_ids = ["${openstack_networking_secgroup_v2.secgroup_{{ clustername }}-1.id}", "{{ defaultsecuritygroupid }}"]
+
+  fixed_ip {
+    "subnet_id"  = "${openstack_networking_subnet_v2.subnet_{{ clustername }}.id}"
+    "ip_address" = "{{ ipaddress }}"
+  }
+}
+
+resource "openstack_compute_instance_v2" "bo-{{ clustername }}-node{{ octet }}" {
+  name      = "bo-{{ clustername }}-node{{ octet }}"
+  availability_zone = "{{ availabilityzone }}"
+  image_name  = "{{ glanceimagename }}"
+  flavor_id = "{{ workerimageflavor }}"
+  key_pair  = "{{ keypair }}"
+  security_groups = ["${openstack_networking_secgroup_v2.secgroup_{{ clustername }}-1.name}", "default" ]
+
+  scheduler_hints {
+    group = "${openstack_compute_servergroup_v2.{{ clustername }}-sg.id}"
+  }
+
+  network {
+    name = "${openstack_networking_network_v2.network_{{ clustername }}.name}"
+    port = "${openstack_networking_port_v2.bo_{{ clustername }}_port_{{ octet }}.id}"
+  }
+}
+
