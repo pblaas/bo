@@ -50,7 +50,7 @@ optional arguments:
 
 ### Example
 ```
-./bo.py PB_ITE_1 192.168.5.0/24 --workers 10
+./bo.py PB_ITE_1 xxx.xxx.xxx.xxx --workers 10
 terraform init
 terraform apply
 ```
