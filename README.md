@@ -10,7 +10,7 @@ This includes:
 * X instances
 * floating IP
 
-## Usage
+### Usage
 
 ```
 usage: bo.py [-h] [--username USERNAME] [--projectname PROJECTNAME]
@@ -48,4 +48,10 @@ optional arguments:
                         c2f4f584c326)
 ```
 
+### Example
+```
+./bo.py PB_ITE_1 192.168.5.0/24 --workers 10
+terraform init
+terraform apply
+```
 
